@@ -57,7 +57,7 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 int __io_putchar(int ch)
 {
-	HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+	HAL_UART_Transmit(&hlpuart1, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
 	return ch;
 }
 /* USER CODE END 0 */
@@ -100,8 +100,15 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HAL_GPIO_TogglePin(GPIO_TypeDef *GPIOA, GPIO_PIN_5);
-	  HAL_Delay(500);
+	  if(HAL_GPIO_ReadPin (GPIOC, GPIO_PIN_13))
+	        {
+	            HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+	        }
+	        else
+	        {
+	            HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+	        }
+	  // HAL_Delay(500);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
