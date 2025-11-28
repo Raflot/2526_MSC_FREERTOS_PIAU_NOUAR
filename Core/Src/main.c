@@ -38,11 +38,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define STACK_SIZE 256
-#define TASK1_PRIORITY 1
-#define TASK2_PRIORITY 2
-#define TASK1_DELAY 1
-#define TASK2_DELAY 2
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -54,7 +50,7 @@
 
 /* USER CODE BEGIN PV */
 TaskHandle_t h_task_led;
-
+BaseType_t ret;
 //TaskHandle_t h_task_btn;
 /* USER CODE END PV */
 
@@ -67,8 +63,9 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-TaskHandle_t TaskTakeHandle;
-TaskHandle_t TaskGiveHandle;
+//TaskHandle_t TaskTakeHandle;
+//TaskHandle_t TaskGiveHandle;
+SemaphoreHandle_t sem_handle;
 
 int __io_putchar(int ch) {
 	HAL_UART_Transmit(&hlpuart1, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
@@ -84,7 +81,7 @@ void task_led(void * unused)
 	}
 }
 
-void taskGive(void * unused)
+/*void taskGive(void * unused)
 {
 	uint8_t chr;
     static uint32_t delay = 100;
@@ -116,17 +113,22 @@ void taskTake(void * unused)
         }
 	}
 }
-
-/*void task_bug(void * pvParameters)
+*/
+void task_bug(void * pvParameters)
 {
 	int delay = (int) pvParameters;
 	for(;;)
 	{
+		sem_handle = xSemaphoreCreateBinary();
+		xSemaphoreTake(sem_handle, 1000);
 		printf("Je suis %s et je m'endors pour \%d ticks\r\n", pcTaskGetName(NULL), delay);
 		vTaskDelay(delay);
+		xSemaphoreGive(sem_handle);
+
+
 	}
 }
-*/
+
 
 /* USER CODE END 0 */
 
@@ -161,13 +163,14 @@ int main(void)
   MX_GPIO_Init();
   MX_LPUART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  //ret = xTaskCreate(task_bug, "Tache 1", STACK_SIZE, (void *) TASK1_DELAY, TASK1_PRIORITY, NULL);
-  //configASSERT(pdPASS == ret);
-  //ret = xTaskCreate(task_bug, "Tache 2", STACK_SIZE, (void *) TASK2_DELAY, TASK2_PRIORITY, NULL);
-  //configASSERT(pdPASS == ret);
+  ret = xTaskCreate(task_bug, "Tache 1", STACK_SIZE, (void *) TASK1_DELAY, TASK1_PRIORITY, NULL);
+  configASSERT(pdPASS == ret);
+  ret = xTaskCreate(task_bug, "Tache 2", STACK_SIZE, (void *) TASK2_DELAY, TASK2_PRIORITY, NULL);
+  configASSERT(pdPASS == ret);
   xTaskCreate(task_led,"LED",256,NULL,1,NULL);
-  xTaskCreate(taskTake,"TAKE",256,NULL,3,&TaskTakeHandle);
-  xTaskCreate(taskGive,"GIVE",256,NULL,2,&TaskGiveHandle);
+  //xTaskCreate(taskTake,"TAKE",256,NULL,3,&TaskTakeHandle);
+  //xTaskCreate(taskGive,"GIVE",256,NULL,2,&TaskGiveHandle);
+
 
   vTaskStartScheduler();
   /* USER CODE END 2 */
