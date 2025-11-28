@@ -48,6 +48,8 @@
 
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
+QueueHandle_t queueTimer;
+
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -82,6 +84,9 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
+
+	queueTimer = xQueueCreate(10, sizeof(uint32_t));
+
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */

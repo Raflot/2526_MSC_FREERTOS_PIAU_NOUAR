@@ -24,6 +24,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
 
 /* USER CODE END Includes */
 
@@ -34,7 +38,11 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define STACK_SIZE 256
+#define TASK1_PRIORITY 1
+#define TASK2_PRIORITY 2
+#define TASK1_DELAY 1
+#define TASK2_DELAY 2
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -45,7 +53,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+TaskHandle_t h_task_led;
 
+//TaskHandle_t h_task_btn;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -57,20 +67,67 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-int __io_putchar(int ch)
-{
+TaskHandle_t TaskTakeHandle;
+TaskHandle_t TaskGiveHandle;
+
+int __io_putchar(int ch) {
 	HAL_UART_Transmit(&hlpuart1, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
 	return ch;
 }
+
 void task_led(void * unused)
 {
-	while(1)
+	for(;;)
 	{
 		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-		HAL_Delay(100);
-		printf("hop, je change! \n\r");
+		vTaskDelay(100);
 	}
 }
+
+void taskGive(void * unused)
+{
+	uint8_t chr;
+    static uint32_t delay = 100;
+
+	for(;;)
+	{
+		printf("Task GIVE : je vais envoyer une notifiction \r\n");
+        xTaskNotifyGive(TaskTakeHandle);
+        printf("Task GIVE : je viens d'envoyer une notification \r\n");
+		vTaskDelay(pdMS_TO_TICKS(delay));
+	}
+}
+
+void taskTake(void * unused)
+{
+	uint8_t chr;
+	uint32_t result;
+	for(;;)
+	{
+		printf("Task TAKE : je vais recevoir une notification \r\n");
+	    result = ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000));
+        if (result > 0)        {
+			printf("Task TAKE : Je viens de recevoir une notification \r\n");
+		}
+        else
+        {
+        	printf("Semaphore non reçu en moins d'une seconde \r\n");
+            NVIC_SystemReset();
+        }
+	}
+}
+
+/*void task_bug(void * pvParameters)
+{
+	int delay = (int) pvParameters;
+	for(;;)
+	{
+		printf("Je suis %s et je m'endors pour \%d ticks\r\n", pcTaskGetName(NULL), delay);
+		vTaskDelay(delay);
+	}
+}
+*/
+
 /* USER CODE END 0 */
 
 /**
@@ -90,7 +147,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  printf("=====HELLO WORLD===== \r\n");
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -104,15 +161,15 @@ int main(void)
   MX_GPIO_Init();
   MX_LPUART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  printf("hello world\n\r");
+  //ret = xTaskCreate(task_bug, "Tache 1", STACK_SIZE, (void *) TASK1_DELAY, TASK1_PRIORITY, NULL);
+  //configASSERT(pdPASS == ret);
+  //ret = xTaskCreate(task_bug, "Tache 2", STACK_SIZE, (void *) TASK2_DELAY, TASK2_PRIORITY, NULL);
+  //configASSERT(pdPASS == ret);
+  xTaskCreate(task_led,"LED",256,NULL,1,NULL);
+  xTaskCreate(taskTake,"TAKE",256,NULL,3,&TaskTakeHandle);
+  xTaskCreate(taskGive,"GIVE",256,NULL,2,&TaskGiveHandle);
 
-    xTaskCreate( task_led,
-                            "LED",
-                            256,
-                            NULL,
-                            1,
-                            NULL
-                          );
+  vTaskStartScheduler();
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in cmsis_os2.c) */
