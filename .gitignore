@@ -1,0 +1,10 @@
+# Ignore build folders
+Debug/
+Release/
+*.o
+*.elf
+*.bin
+
+# Ignore IDE settings (Optional, but recommended)
+.settings/
+.mxproject
